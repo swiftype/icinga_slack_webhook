@@ -10,7 +10,10 @@ from icinga_slack import __version__
 alert_colors = {'UNKNOWN': '#6600CC',
                 'CRITICAL': '#FF0000',
                 'WARNING': '#FF9900',
-                'OK': '#36A64F'}
+                'OK': '#36A64F',
+                'UP': '#36A64F',
+                'DOWN': '#FF0000',
+                'UNREACHABLE': '#6600CC'}
 
 
 class AttachmentField(dict):
@@ -57,20 +60,22 @@ class Message(dict):
             self['icon_emoji'] = icon_emoji
         self['attachments'] = AttachmentList()
 
-    def attach(self, message, host, level, action_url=None, notes_url=None, status_cgi_url=''):
+    def attach(self, message, host, level, action_url=None, notes_url=None, status_cgi_url='', host_state=None):
         fields = AttachmentFieldList()
         fields.append(AttachmentField("Message", message))
         fields.append(AttachmentField("Host", "<{1}?host={0}|{0}>".format(host, status_cgi_url), True))
-        fields.append(AttachmentField("Level", level, True))
+        if host_state:
+            fields.append(AttachmentField("Status", host_state, True))
+        else:
+            fields.append(AttachmentField("Level", level, True))
         if action_url:
             fields.append(AttachmentField("Actions URL", action_url, True))
         if notes_url:
             fields.append(AttachmentField("Notes URL", notes_url, True))
-        if level in alert_colors.keys():
-            color = alert_colors[level]
-        else:
-            color = alert_colors['UNKNOWN']
-        alert_attachment = Attachment(fallback="    {0} on {1} is {2}".format(message, host, level), color=color, fields=fields)
+        color = alert_colors.get(host_state or level, 'UNKNOWN')
+        alert_attachment = Attachment(
+            fallback="    {0} on {1} is {2}".format(message, host, host_state or level), color=color, fields=fields
+        )
         self['attachments'].append(alert_attachment)
 
     def send(self, webhook_url):
@@ -90,6 +95,7 @@ def parse_options():
     parser.add_argument('-u', metavar="WEBHOOKURL", type=str, required=True, help="The webhook URL for your integration")
     parser.add_argument('-A', metavar="SERVICEACTIONURL", type=str, default=None, help="An optional action_url for this alert {default: None}")
     parser.add_argument('-H', metavar="HOST", type=str, default="UNKNOWN", help="An optional host the message relates to {default: UNKNOWN}")
+    parser.add_argument('--host-state', type=str, help="An optional state the host is in, use this for host alerts")
     parser.add_argument('-L', metavar="LEVEL", type=str, choices=["OK", "WARNING", "CRITICAL", "UNKNOWN"], default="UNKNOWN",
                         help="An optional alert level {default: UNKNOWN}")
     parser.add_argument('-M', metavar="HEADERMESSAGE", type=str, default="I have received the following alert:",
@@ -106,7 +112,7 @@ def parse_options():
 def main():
     args = parse_options()
     message = Message(channel=args.c, text=args.M, username=args.U)
-    message.attach(message=args.m, host=args.H, level=args.L, action_url=args.A, notes_url=args.N, status_cgi_url=args.S)
+    message.attach(message=args.m, host=args.H, level=args.L, action_url=args.A, notes_url=args.N, status_cgi_url=args.S, host_state=args.host_state)
     if message.send(webhook_url=args.u):
         sys.exit(0)
     else:

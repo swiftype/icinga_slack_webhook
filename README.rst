@@ -20,6 +20,7 @@ Usage
 
     usage: icinga_slack_webhook_notify [-h] -c CHANNEL -m MESSAGE -s SUBDOMAIN -t TOKEN
                                        [-A SERVICEACTIONURL] [-H HOST] [-L LEVEL]
+                                       [--host-state HOST_STATE]
                                        [-M HEADERMESSAGE] [-N SERVICENOTESURL] [-S STATUSCGIURL]
                                        [-U USERNAME]
 
@@ -33,6 +34,8 @@ Usage
       -t TOKEN             The access token for your integration
       -A SERVICEACTIONURL  An optional action_url for this alert {default: None}
       -H HOST              An optional host the message relates to {default: UNKNOWN}
+      --host-state HOST_STATE
+                            An optional state the host is in, use this for host alerts
       -L LEVEL             An optional alert level {default: UNKNOWN}
       -M HEADERMESSAGE     A header message sent before the formatted alert
                            {default: I have received the following alert:}
