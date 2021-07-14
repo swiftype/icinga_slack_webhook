@@ -72,7 +72,7 @@ class Message(dict):
             fields.append(AttachmentField("Actions URL", action_url, True))
         if notes_url:
             fields.append(AttachmentField("Notes URL", notes_url, True))
-        color = alert_colors.get(host_state or level, 'UNKNOWN')
+        color = alert_colors.get(host_state or level, alert_colors['UNKNOWN'])
         alert_attachment = Attachment(
             fallback="    {0} on {1} is {2}".format(message, host, host_state or level), color=color, fields=fields
         )
